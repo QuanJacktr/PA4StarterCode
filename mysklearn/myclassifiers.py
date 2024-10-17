@@ -25,7 +25,7 @@ class MySimpleLinearRegressionClassifier:
                 fits a line to x and y data (None if to be created in fit())
         """
         self.discretizer = discretizer
-        self.regressor = regressor
+        self.regressor = regressor if regressor is not None else MySimpleLinearRegressor()
 
     def fit(self, X_train, y_train):
         """Fits a simple linear regression line to X_train and y_train.
@@ -37,6 +37,7 @@ class MySimpleLinearRegressionClassifier:
                 The shape of y_train is n_train_samples
         """
         pass # TODO: fix this
+        self.regressor.fit(X_train, y_train)
 
     def predict(self, X_test):
         """Makes predictions for test samples in X_test by applying discretizer
@@ -49,7 +50,8 @@ class MySimpleLinearRegressionClassifier:
         Returns:
             y_predicted(list of obj): The predicted target y values (parallel to X_test)
         """
-        return [] # TODO: fix this
+        predictions = self.regressor.predict(X_test)
+        return [self.discretizer(pred) for pred in predictions] # TODO: fix this
 
 class MyKNeighborsClassifier:
     """Represents a simple k nearest neighbors classifier.
@@ -105,11 +107,24 @@ class MyKNeighborsClassifier:
             neighbor_indices(list of list of int): 2D list of k nearest neighbor
                 indices in X_train (parallel to distances)
         """
-        return [], [] # TODO: fix this
+        distances = []
+        neighbor_indices = []
+
+        for test_instance in X_test:
+            instance_distances = []
+            for i, train_instance in enumerate(self.X_train):
+                dist = myutils.euclidean_distance(test_instance, train_instance)
+                instance_distances.append((dist, i))
+
+            instance_distances.sort()
+            distances.append([d for d, _ in instance_distances[:self.n_neighbors]])
+            neighbor_indices.append([i for _, i in instance_distances[:self.n_neighbors]])
+
+        return distances, neighbor_indices # TODO: fix this
 
     def predict(self, X_test):
         """Makes predictions for test instances in X_test.
-
+        
         Args:
             X_test(list of list of numeric vals): The list of testing samples
                 The shape of X_test is (n_test_samples, n_features)
@@ -117,7 +132,13 @@ class MyKNeighborsClassifier:
         Returns:
             y_predicted(list of obj): The predicted target y values (parallel to X_test)
         """
-        return [] # TODO: fix this
+        y_predict = []
+        _, neighbor_indices = self.kneighbors(X_test)
+
+        for neighbors in neighbor_indices:
+            neighbor_labels = [self.y_train[i] for i in neighbors]
+            y_predict.append(max(set(neighbor_labels), key=neighbor_labels.count))
+        return y_predict # TODO: fix this
 
 class MyDummyClassifier:
     """Represents a "dummy" classifier using the "most_frequent" strategy.
@@ -153,6 +174,7 @@ class MyDummyClassifier:
             Since Zero-R only predicts the most frequent class label, this method
                 only saves the most frequent class label.
         """
+        self.most_common_label = max(set(y_train), key=y_train.count)
         pass # TODO: fix this
 
     def predict(self, X_test):
@@ -165,4 +187,4 @@ class MyDummyClassifier:
         Returns:
             y_predicted(list of obj): The predicted target y values (parallel to X_test)
         """
-        return [] # TODO: fix this
+        return [self.most_common_label for _ in X_test] # TODO: fix this
